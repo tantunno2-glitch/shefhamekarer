@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta name="google-site-verification" content="eAsLgDBnHHi5CsvHfG5MsJxYtylMXZ6pPhACkM3WzMU" />
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3418704645614510"
-     crossorigin="anonymous"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3418704645614510" crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="OFxS7AmhAOnspUtjO4NKGNfgviD0QzbyKLUzcu44aOE" />
+    <meta name="google-site-verification" content="eAsLgDBnHHi5CsvHfG5MsJxYtylMXZ6pPhACkM3WzMU" />
     <title>שף המקרר - מהדורת המאסטר 🍳</title>
     <style>
         :root {
@@ -460,7 +460,6 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-    <meta name="google-site-verification" content="eAsLgDBnHHi5CsvHfG5MsJxYtylMXZ6pPhACkM3WzMU" />
 <body>
 
     <div class="lang-selector">
@@ -529,7 +528,13 @@
     <script>
         const SUPABASE_URL = "https://ieykclexxaoksagfouzl.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_x8AeXocx3AldMgh-ZEaDjA_k7WeumDV";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true
+            }
+        });
         
         const GEMINI_API_KEY = "AQ.Ab8RN6I4ko_3Ed9n3xBp01cZqCdws_e98DSpgXOJ3EK3mwQFkw";
 
@@ -580,9 +585,9 @@
             ar: {
                 title: "طاهي الثلاجة 🍳",
                 authWaiting: "🔑 في انتظار تسجيل الدخول",
-                authDesc: "لبدء الطهي وحفظ حصتك اليومية، يرجى تسجيل الدخول أو التسجيل:",
+                authDesc: "لبדء الطهي وحفظ حصتك اليومية، يرجى تسجيل الدخول أو التسجيل:",
                 email: "البريد الإلكتروني", password: "كلمة المرور", login: "تسجيل الدخول", signup: "تسجيل جديد",
-                recentRecipes: "📜 الوصفات الأخيرة (سحابي ☁️)",
+                recentRecipes: "📜 الوصفות الأخيرة (سحابי ☁️)",
                 loadingRecipes: "جاري تحميل الوصفات...",
                 logout: "تسجيل الخروج", secureConnected: "🌐 متصل وآمن",
                 welcome: "مرحباً أيها الطاهي! اختر أسلوباً، أدخل المكونات أو دع الطاهي يفاجئك!",
@@ -609,12 +614,17 @@
         };
 
         async function checkAuthState() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session && session.user) {
-                currentUser = session.user;
-                showAppUI();
-                loadHistoryCloud();
-            } else {
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session && session.user) {
+                    currentUser = session.user;
+                    showAppUI();
+                    loadHistoryCloud();
+                } else {
+                    showAuthUI();
+                }
+            } catch (e) {
+                console.error("Auth state error:", e);
                 showAuthUI();
             }
         }
@@ -633,29 +643,39 @@
         async function handleLogin() {
             const email = document.getElementById("auth-email").value;
             const password = document.getElementById("auth-password").value;
-            if(!email || !password) return alert("Fill fields");
-
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) return alert(error.message);
             
-            currentUser = data.user;
-            showAppUI();
-            loadHistoryCloud();
+            if(!email || !password) return alert("נא למלא את כל השדות");
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) return alert("שגיאת התחברות: " + error.message);
+                
+                currentUser = data.user;
+                showAppUI();
+                loadHistoryCloud();
+            } catch (e) {
+                alert("שגיאה בלתי צפויה: " + e.message);
+            }
         }
 
         async function handleSignUp() {
             const email = document.getElementById("auth-email").value;
             const password = document.getElementById("auth-password").value;
-            if(!email || !password) return alert("Fill fields");
-
-            const { data, error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) return alert(error.message);
             
-            alert("Success!");
-            if(data.user) {
-                currentUser = data.user;
-                showAppUI();
-                loadHistoryCloud();
+            if(!email || !password) return alert("נא למלא את כל השדות");
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                if (error) return alert("שגיאת הרשמה: " + error.message);
+                
+                alert("נרשמת בהצלחה! במידה ונדרש אימות מייל, אנא בדוק את תיבת הדואר שלך.");
+                if(data.user) {
+                    currentUser = data.user;
+                    showAppUI();
+                    loadHistoryCloud();
+                }
+            } catch (e) {
+                alert("שגיאה בלתי צפויה: " + e.message);
             }
         }
 
@@ -823,55 +843,49 @@
 
         async function loadHistoryCloud() {
             if(!currentUser) return;
+            const historyList = document.getElementById("history-list");
+            
             const { data, error } = await supabaseClient.from('recipes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+            
             if (error) {
                 console.error(error);
+                historyList.innerHTML = `<li style="color: #ff6b6b; font-size: 13px;">שגיאה בטעינת מתכונים</li>`;
                 return;
             }
-            window.savedRecipesCache = data;
-            updateHistoryUI();
-        }
-
-        function updateHistoryUI() {
-            const list = document.getElementById("history-list");
-            if (!list) return;
-            const data = window.savedRecipesCache || [];
-
-            if (data.length === 0) {
-                list.innerHTML = `<li style="color: var(--text-muted); font-size: 13px;">${translations[currentLang].noRecipesCloud}</li>`;
+            
+            if (!data || data.length === 0) {
+                historyList.innerHTML = `<li style="color: var(--text-muted); font-size: 13px;">${translations[currentLang].noRecipesCloud}</li>`;
                 return;
             }
-
-            list.innerHTML = "";
-            data.forEach(item => {
+            
+            historyList.innerHTML = "";
+            data.forEach(recipe => {
+                const wrapper = document.createElement("div");
+                wrapper.className = "history-item-wrapper";
+                
                 const li = document.createElement("li");
-                li.className = "history-item-wrapper";
-                li.innerHTML = `
-                    <div class="history-item" onclick="viewSavedRecipe('${item.id}')">${item.title}</div>
-                    <button class="delete-btn" onclick="deleteRecipe('${item.id}', event)">✕</button>
-                `;
-                list.appendChild(li);
+                li.className = "history-item";
+                li.innerText = recipe.title;
+                li.onclick = () => processAndDisplayRecipe(recipe.full_text, false);
+                
+                const delBtn = document.createElement("button");
+                delBtn.className = "delete-btn";
+                delBtn.innerHTML = "🗑️";
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteRecipe(recipe.id);
+                };
+                
+                wrapper.appendChild(li);
+                wrapper.appendChild(delBtn);
+                historyList.appendChild(wrapper);
             });
         }
 
-        function viewSavedRecipe(id) {
-            const data = window.savedRecipesCache || [];
-            const recipe = data.find(r => r.id == id);
-            if(recipe) {
-                document.getElementById("recipe-area").style.display = "block";
-                processAndDisplayRecipe(recipe.full_text, false);
-            }
-        }
-
-        async function deleteRecipe(recipeId, event) {
-            event.stopPropagation(); 
-            if (!confirm(translations[currentLang].confirmDelete)) return;
-
+        async function deleteRecipe(recipeId) {
+            if(!confirm(translations[currentLang].confirmDelete)) return;
             const { error } = await supabaseClient.from('recipes').delete().eq('id', recipeId);
-            if (error) {
-                alert("Delete error");
-                return;
-            }
+            if (error) alert(error.message);
             loadHistoryCloud();
         }
     </script>
